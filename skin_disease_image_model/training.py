@@ -165,6 +165,7 @@ def run_phase(model, train_ds, val_ds, epochs: int, lr: float, ckpt_path: str,
         ModelCheckpoint(ckpt_path, monitor="val_accuracy", save_best_only=True,
                         save_weights_only=True, verbose=0),
     ]
+    tf.debugging.set_log_device_placement(True)
     history = model.fit(
         train_ds, validation_data=val_ds, epochs=epochs,
         class_weight=class_weights or None, callbacks=callbacks, verbose=2,
@@ -183,9 +184,11 @@ def train(dataset_dir: str, epochs: int, batch_size: int, output_weights: str,
           val_split: float, seed: int) -> None:
     tf.keras.utils.set_random_seed(seed)
     gpus = tf.config.list_physical_devices("GPU")
+    if not gpus:
+        raise RuntimeError("No GPU found. Training requires a GPU; set visible devices or check your CUDA install.")
     for g in gpus:
         tf.config.experimental.set_memory_growth(g, True)
-    logger.info("GPUs: %s", gpus if gpus else "NONE (training will be very slow)")
+    logger.info("GPUs: %s", gpus)
 
     image_size = (300, 300) if model_type == "efficientnet" else (224, 224)
     train_ds, val_ds, class_names, class_weights = make_datasets(
