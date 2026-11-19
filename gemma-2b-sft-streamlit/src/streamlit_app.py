@@ -1,6 +1,6 @@
 """
 Medical Kiosk AI — Streamlit Frontend
-API: https://sehgalanmol-medical-kiosk-api.hf.space
+API: http://localhost:8000
 
 Endpoints:
   POST /api/v1/chat          JSON {pulse_rate, oxygen_level, temperature, text}
@@ -15,7 +15,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # ─── CONSTANTS ────────────────────────────────────────────────────────────────
-BASE_URL  = ""
+BASE_URL  = "http://localhost:8000"
 CHAT_URL  = f"{BASE_URL}/api/v1/chat"
 IMAGE_URL = f"{BASE_URL}/api/v1/classify-image"
 
