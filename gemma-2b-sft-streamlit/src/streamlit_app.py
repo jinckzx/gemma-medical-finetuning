@@ -1,6 +1,6 @@
 """
 Medical Kiosk AI — Streamlit Frontend
-API: https://yash983-medical-kiosk-api.hf.space
+API: https://sehgalanmol-medical-kiosk-api.hf.space
 
 Endpoints:
   POST /api/v1/chat          JSON {pulse_rate, oxygen_level, temperature, text}
@@ -15,7 +15,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # ─── CONSTANTS ────────────────────────────────────────────────────────────────
-BASE_URL  = "https://yash983-medical-kiosk-api.hf.space"
+BASE_URL  = ""
 CHAT_URL  = f"{BASE_URL}/api/v1/chat"
 IMAGE_URL = f"{BASE_URL}/api/v1/classify-image"
 

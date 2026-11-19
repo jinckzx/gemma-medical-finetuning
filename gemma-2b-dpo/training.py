@@ -46,6 +46,14 @@ class DPODataConfig:
     )
     val_split: float = field(default=0.10, metadata={"help": "Fraction of data held out for validation"})
     seed: int = field(default=42)
+    use_generated_pairs: bool = field(
+        default=False,
+        metadata={"help": "Generate additional preference pairs using the SFT model"},
+    )
+    num_generated_pairs: int = field(
+        default=2000,
+        metadata={"help": "Number of AI-generated preference pairs to add"},
+    )
 
 
 @dataclass
@@ -53,10 +61,14 @@ class DPOModelConfig:
     model_id: str = field(default="google/gemma-2b")
     sft_adapter: str = field(default="model/lora_adapter", metadata={"help": "Path to trained SFT LoRA adapter"})
     output_dir: str = field(default="model/dpo_adapter")
-    lora_r: int = field(default=16)
-    lora_alpha: int = field(default=32)
-    lora_dropout: float = field(default=0.05)
-    target_modules: list = field(default_factory=lambda: ["q_proj", "v_proj"])
+    lora_r: int = field(default=64, metadata={"help": "LoRA rank"})
+    lora_alpha: int = field(default=128, metadata={"help": "LoRA alpha"})
+    lora_dropout: float = field(default=0.1, metadata={"help": "LoRA dropout"})
+    target_modules: list = field(
+        default_factory=lambda: ["q_proj", "v_proj", "k_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+        metadata={"help": "Target modules for LoRA"},
+    )
+    use_rslora: bool = field(default=True, metadata={"help": "Use rank-scaled LoRA"})
     push_to_hub: bool = field(default=False)
     hub_model_id: Optional[str] = field(default=None)
 
@@ -98,7 +110,7 @@ def apply_dpo_lora(merged_model: AutoModelForCausalLM, model_cfg: DPOModelConfig
     """Prepare merged model for k-bit training and attach a fresh DPO LoRA."""
     merged_model = prepare_model_for_kbit_training(merged_model)
 
-    lora_cfg = LoraConfig(
+    lora_kwargs = dict(
         r=model_cfg.lora_r,
         lora_alpha=model_cfg.lora_alpha,
         lora_dropout=model_cfg.lora_dropout,
@@ -106,6 +118,10 @@ def apply_dpo_lora(merged_model: AutoModelForCausalLM, model_cfg: DPOModelConfig
         bias="none",
         task_type="CAUSAL_LM",
     )
+    if model_cfg.use_rslora:
+        lora_kwargs["use_rslora"] = True
+
+    lora_cfg = LoraConfig(**lora_kwargs)
     model = get_peft_model(merged_model, lora_cfg)
     model.print_trainable_parameters()
     logger.info("Fresh DPO LoRA applied")
@@ -156,26 +172,30 @@ def train_dpo(model, ref_model, tokenizer, train_ds, val_ds, model_cfg: DPOModel
     dpo_cfg = DPOConfig(
         output_dir=model_cfg.output_dir,
         beta=0.5,
-        loss_type="ipo",
-        learning_rate=1e-5,
-        num_train_epochs=1,
+        loss_type="simpo",
+        learning_rate=5e-6,
+        num_train_epochs=2,
         per_device_train_batch_size=1,
         gradient_accumulation_steps=8,
         lr_scheduler_type="cosine",
-        warmup_ratio=0.10,
+        warmup_ratio=0.15,
         weight_decay=0.01,
         fp16=False,
-        logging_steps=25,
-        save_steps=100,
-        save_total_limit=2,
-        eval_steps=100,
+        logging_steps=10,
+        save_steps=50,
+        save_total_limit=3,
+        eval_steps=50,
         evaluation_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
         report_to="none",
         gradient_checkpointing=True,
         optim="paged_adamw_8bit",
-        max_grad_norm=0.5,
+        max_grad_norm=0.3,
+        max_length=1024,
+        max_prompt_length=512,
+        gamma=0.5,
+        label_smoothing=0.1,
         push_to_hub=model_cfg.push_to_hub,
         hub_model_id=model_cfg.hub_model_id if model_cfg.push_to_hub else None,
     )
@@ -188,7 +208,7 @@ def train_dpo(model, ref_model, tokenizer, train_ds, val_ds, model_cfg: DPOModel
         eval_dataset=val_ds,
     )
 
-    logger.info("Starting DPO training...")
+    logger.info("Starting DPO training with SimPO...")
     trainer.train()
 
     trainer.save_model(model_cfg.output_dir)

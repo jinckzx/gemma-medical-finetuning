@@ -8,9 +8,9 @@ An end-to-end medical AI pipeline where users submit **text-based symptom querie
 
 | Resource | Link |
 |---|---|
-| 🤗 SFT Model | [Yash983/medgemma-2b-sft](https://huggingface.co/Yash983/medgemma-2b-sft) |
-| 🤗 DPO Model | [Yash983/medgemma-2b-dpo](https://huggingface.co/Yash983/medgemma-2b-dpo) |
-| 🚀 Live Demo | [gemma-2b-sft-streamlit](https://huggingface.co/spaces/Yash983/gemma-2b-sft-streamlit) |
+| 🤗 SFT Model | [sehgalanmol/medgemma-2b-sft](https://huggingface.co/sehgalanmol/medgemma-2b-sft) |
+| 🤗 DPO Model | [sehgalanmol/medgemma-2b-dpo](https://huggingface.co/sehgalanmol/medgemma-2b-dpo) |
+| 🚀 Live Demo | [gemma-2b-sft-streamlit](https://huggingface.co/spaces/sehgalanmol/gemma-2b-sft-streamlit) |
 
 ---
 
@@ -70,7 +70,7 @@ Fine-tuned Gemma-2B on a curated ~190K-sample medical corpus using QLoRA to grou
 
 ### 2. MedGemma-2B-DPO — Preference Alignment
 
-**Base:** `Yash983/medgemma-2b-sft`  
+**Base:** `sehgalanmol/medgemma-2b-sft`  
 **Method:** Direct Preference Optimization (DPO with IPO loss)
 
 RLHF-aligned version of the SFT model, trained to prefer clinically coherent, well-structured responses over noisy or hallucinated outputs.
@@ -140,7 +140,7 @@ ResNet50 (frozen, ImageNet weights)
 ## 🚀 Demo
 
 The Streamlit app is deployed on Hugging Face Spaces:  
-👉 [gemma-2b-sft-streamlit](https://huggingface.co/spaces/Yash983/gemma-2b-sft-streamlit)
+👉 [gemma-2b-sft-streamlit](https://huggingface.co/spaces/sehgalanmol/gemma-2b-sft-streamlit)
 
 Users can:
 - Enter free-text symptom descriptions to receive treatment plan suggestions
@@ -156,8 +156,8 @@ from peft import PeftModel
 import torch
 
 BASE = "google/gemma-2b"
-SFT  = "Yash983/medgemma-2b-sft"
-DPO  = "Yash983/medgemma-2b-dpo"
+SFT  = "sehgalanmol/medgemma-2b-sft"
+DPO  = "sehgalanmol/medgemma-2b-dpo"
 
 bnb = BitsAndBytesConfig(
     load_in_4bit=True,
@@ -204,15 +204,15 @@ This system is a **research prototype** and is **not intended for clinical use**
 ```bibtex
 @misc{medgemma2b-sft,
   title  = {MedGemma-2B-SFT: Supervised fine-tuned medical language model},
-  author = {Yash},
+  author = {MedGemma Contributors},
   year   = {2025},
-  url    = {https://huggingface.co/Yash983/medgemma-2b-sft}
+  url    = {https://huggingface.co/sehgalanmol/medgemma-2b-sft}
 }
 
 @misc{medgemma2b-dpo,
   title  = {MedGemma-2B-DPO: DPO-aligned medical language model},
-  author = {Yash},
+  author = {MedGemma Contributors},
   year   = {2025},
-  url    = {https://huggingface.co/Yash983/medgemma-2b-dpo}
+  url    = {https://huggingface.co/sehgalanmol/medgemma-2b-dpo}
 }
 ```

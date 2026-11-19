@@ -204,6 +204,10 @@ def build_dataset(cfg: DataConfig) -> DatasetDict:
         "MedMCQA":  _load_medmcqa,
         "MedAlpaca": _load_medalpaca,
     }
+    if cfg.use_medqa:
+        loaders["MedQA"] = _load_medqa
+    if cfg.use_mmlu:
+        loaders["MMLU-Medical"] = _load_mmlu_medical
 
     parts = []
     for name, loader_fn in loaders.items():
@@ -282,7 +286,7 @@ def load_model_and_tokenizer(cfg: ModelConfig):
     model = prepare_model_for_kbit_training(model)
     model.config.use_cache = False
 
-    lora_cfg = LoraConfig(
+    lora_kwargs = dict(
         r=cfg.lora_r,
         lora_alpha=cfg.lora_alpha,
         lora_dropout=cfg.lora_dropout,
@@ -290,6 +294,10 @@ def load_model_and_tokenizer(cfg: ModelConfig):
         bias="none",
         task_type="CAUSAL_LM",
     )
+    if cfg.use_rslora:
+        lora_kwargs["use_rslora"] = True
+
+    lora_cfg = LoraConfig(**lora_kwargs)
     model = get_peft_model(model, lora_cfg)
     model.print_trainable_parameters()
     return model, tokenizer
@@ -301,26 +309,27 @@ def train(model_cfg: ModelConfig, train_ds, val_ds, tokenizer) -> None:
 
     training_args = TrainingArguments(
         output_dir=model_cfg.output_dir,
-        num_train_epochs=2,
+        num_train_epochs=3,
         per_device_train_batch_size=1,
-        gradient_accumulation_steps=8,
-        learning_rate=2e-4,
+        gradient_accumulation_steps=4,
+        learning_rate=5e-5,
         lr_scheduler_type="cosine",
-        warmup_ratio=0.05,
-        weight_decay=0.01,
+        warmup_ratio=0.1,
+        weight_decay=0.02,
         fp16=True,
-        logging_steps=50,
-        save_steps=200,
-        save_total_limit=2,
+        logging_steps=10,
+        save_steps=50,
+        save_total_limit=3,
         evaluation_strategy="steps",
-        eval_steps=200,
+        eval_steps=50,
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
         report_to="none",
         dataloader_num_workers=4,
         gradient_checkpointing=True,
         optim="paged_adamw_8bit",
-        max_grad_norm=1.0,
+        max_grad_norm=0.5,
+        group_by_length=True,
         hub_model_id=model_cfg.hub_model_id if model_cfg.push_to_hub else None,
         push_to_hub=model_cfg.push_to_hub,
     )
