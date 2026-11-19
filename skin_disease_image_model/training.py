@@ -41,10 +41,19 @@ def combine_dataset(source_dataset_path: str, combined_dataset_path: str) -> Non
     """Combine train/test folders into a single dataset."""
     os.makedirs(combined_dataset_path, exist_ok=True)
 
-    classes = os.listdir(os.path.join(source_dataset_path, "train"))
+    # Handle both "dermnet/train" and "dermnet" as source
+    train_dir = os.path.join(source_dataset_path, "train")
+    if not os.path.exists(train_dir):
+        # Maybe the source is already the dermnet root with train/test
+        train_dir = source_dataset_path
+
+    if not os.path.exists(train_dir):
+        raise FileNotFoundError(f"Train directory not found at {train_dir} or {source_dataset_path}/train")
+
+    classes = os.listdir(train_dir)
 
     for class_name in classes:
-        train_class_path = os.path.join(source_dataset_path, "train", class_name)
+        train_class_path = os.path.join(train_dir, class_name)
         test_class_path = os.path.join(source_dataset_path, "test", class_name)
 
         combined_class_path = os.path.join(combined_dataset_path, class_name)
