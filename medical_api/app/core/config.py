@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # HuggingFace
-    hf_model_id: str = "sehgalanmol/medgemma-2b-sft"
+    hf_model_id: str = "anmolsehgal/medgemma-2b-sft"
     hf_token: str = ""                  # set if the repo is private/gated
     torch_dtype: str = "bfloat16"       # "bfloat16" | "float16" | "float32"
     device_map: str = "auto"            # "auto" | "cpu" | "cuda"

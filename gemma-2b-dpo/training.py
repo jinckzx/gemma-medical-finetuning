@@ -73,7 +73,6 @@ class DPOModelConfig:
     hub_model_id: Optional[str] = field(default=None)
 
 
-# ── BnB config (shared between model and ref_model) ───────────────────────────
 def get_bnb_config() -> BitsAndBytesConfig:
     return BitsAndBytesConfig(
         load_in_4bit=True,
@@ -214,6 +213,18 @@ def train_dpo(model, ref_model, tokenizer, train_ds, val_ds, model_cfg: DPOModel
     trainer.save_model(model_cfg.output_dir)
     tokenizer.save_pretrained(model_cfg.output_dir)
     logger.info("DPO adapter saved → %s", model_cfg.output_dir)
+
+    # Push to HuggingFace Hub if configured
+    if model_cfg.push_to_hub and model_cfg.hub_model_id:
+        from huggingface_hub import HfApi
+        api = HfApi()
+        api.create_repo(repo_id=model_cfg.hub_model_id, repo_type="model", exist_ok=True)
+        api.upload_folder(
+            folder_path=model_cfg.output_dir,
+            repo_id=model_cfg.hub_model_id,
+            repo_type="model",
+        )
+        logger.info("Model pushed to HuggingFace → %s", model_cfg.hub_model_id)
 
     del trainer
     gc.collect()

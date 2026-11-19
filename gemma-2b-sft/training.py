@@ -352,6 +352,18 @@ def train(model_cfg: ModelConfig, train_ds, val_ds, tokenizer) -> None:
     tokenizer.save_pretrained(adapter_path)
     logger.info("LoRA adapter saved → %s", adapter_path)
 
+    # Push to HuggingFace Hub if configured
+    if model_cfg.push_to_hub and model_cfg.hub_model_id:
+        from huggingface_hub import HfApi
+        api = HfApi()
+        api.create_repo(repo_id=model_cfg.hub_model_id, repo_type="model", exist_ok=True)
+        api.upload_folder(
+            folder_path=adapter_path,
+            repo_id=model_cfg.hub_model_id,
+            repo_type="model",
+        )
+        logger.info("Model pushed to HuggingFace → %s", model_cfg.hub_model_id)
+
     del trainer
     gc.collect()
     torch.cuda.empty_cache()
