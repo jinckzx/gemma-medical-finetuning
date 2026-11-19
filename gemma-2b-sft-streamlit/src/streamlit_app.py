@@ -383,7 +383,8 @@ with tab_image:
 
     with col_preview:
         if img_bytes:
-            st.image(img_bytes, caption="Preview", use_container_width=True)
+            import io
+            st.image(io.BytesIO(img_bytes), caption="Preview", use_container_width=True)
         else:
             st.markdown("""
             <div style="border:2px dashed #cbd5e1;border-radius:12px;
@@ -427,7 +428,8 @@ with tab_camera:
         cam_bytes = cam_img.getvalue()
         col_a, col_b = st.columns([1, 1])
         with col_a:
-            st.image(cam_bytes, caption="Captured photo", use_container_width=True)
+            import io
+            st.image(io.BytesIO(cam_bytes), caption="Captured photo", use_container_width=True)
         with col_b:
             st.markdown("**Photo captured!** ✅")
             st.markdown("Vitals will be taken from the sidebar.")
